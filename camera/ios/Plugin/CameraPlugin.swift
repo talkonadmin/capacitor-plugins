@@ -9,7 +9,6 @@ public class CameraPlugin: CAPPlugin {
     private var settings = CameraSettings()
     private let defaultSource = CameraSource.prompt
     private let defaultDirection = CameraDirection.rear
-    private var multiple = false
 
     private var imageCounter = 0
 
@@ -66,82 +65,7 @@ public class CameraPlugin: CAPPlugin {
         }
     }
 
-    @objc func pickLimitedLibraryPhotos(_ call: CAPPluginCall) {
-        if #available(iOS 14, *) {
-            PHPhotoLibrary.requestAuthorization(for: .readWrite) { (granted) in
-                if granted == .limited {
-                    if let viewController = self.bridge?.viewController {
-                        if #available(iOS 15, *) {
-                            PHPhotoLibrary.shared().presentLimitedLibraryPicker(from: viewController) { _ in
-                                self.getLimitedLibraryPhotos(call)
-                            }
-                        } else {
-                            PHPhotoLibrary.shared().presentLimitedLibraryPicker(from: viewController)
-                            call.resolve([
-                                "photos": []
-                            ])
-                        }
-                    }
-                } else {
-                    call.resolve([
-                        "photos": []
-                    ])
-                }
-            }
-        } else {
-            call.unavailable("Not available on iOS 13")
-        }
-    }
-
-    @objc func getLimitedLibraryPhotos(_ call: CAPPluginCall) {
-        if #available(iOS 14, *) {
-            PHPhotoLibrary.requestAuthorization(for: .readWrite) { (granted) in
-                if granted == .limited {
-
-                    self.call = call
-
-                    DispatchQueue.global(qos: .utility).async {
-                        let assets = PHAsset.fetchAssets(with: .image, options: nil)
-                        var processedImages: [ProcessedImage] = []
-
-                        let imageManager = PHImageManager.default()
-                        let options = PHImageRequestOptions()
-                        options.deliveryMode = .highQualityFormat
-
-                        let group = DispatchGroup()
-
-                        for index in 0...(assets.count - 1) {
-                            let asset = assets.object(at: index)
-                            let fullSize = CGSize(width: asset.pixelWidth, height: asset.pixelHeight)
-
-                            group.enter()
-                            imageManager.requestImage(for: asset, targetSize: fullSize, contentMode: .default, options: options) { image, _ in
-                                guard let image = image else {
-                                    group.leave()
-                                    return
-                                }
-                                processedImages.append(self.processedImage(from: image, with: asset.imageData))
-                                group.leave()
-                            }
-                        }
-
-                        group.notify(queue: .global(qos: .utility)) { [weak self] in
-                            self?.returnImages(processedImages)
-                        }
-                    }
-                } else {
-                    call.resolve([
-                        "photos": []
-                    ])
-                }
-            }
-        } else {
-            call.unavailable("Not available on iOS 13")
-        }
-    }
-
     @objc func getPhoto(_ call: CAPPluginCall) {
-        self.multiple = false
         self.call = call
         self.settings = cameraSettings(from: call)
 
@@ -149,6 +73,7 @@ public class CameraPlugin: CAPPlugin {
         if let missingUsageDescription = checkUsageDescriptions() {
             CAPLog.print("⚡️ ", self.pluginId, "-", missingUsageDescription)
             call.reject(missingUsageDescription)
+            bridge?.alert("Camera Error", "Missing required usage description. See console for more information")
             return
         }
 
@@ -161,15 +86,6 @@ public class CameraPlugin: CAPPlugin {
             case .photos:
                 self.showPhotos()
             }
-        }
-    }
-
-    @objc func pickImages(_ call: CAPPluginCall) {
-        self.multiple = true
-        self.call = call
-        self.settings = cameraSettings(from: call)
-        DispatchQueue.main.async {
-            self.showPhotos()
         }
     }
 
@@ -231,12 +147,11 @@ extension CameraPlugin: UIImagePickerControllerDelegate, UINavigationControllerD
     }
 
     public func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
-        picker.dismiss(animated: true) {
-            if let processedImage = self.processImage(from: info) {
-                self.returnProcessedImage(processedImage)
-            } else {
-                self.call?.reject("Error processing image")
-            }
+        picker.dismiss(animated: true, completion: nil)
+        if let processedImage = processImage(from: info) {
+            returnProcessedImage(processedImage)
+        } else {
+            self.call?.reject("Error processing image")
         }
     }
 }
@@ -249,54 +164,23 @@ extension CameraPlugin: PHPickerViewControllerDelegate {
             self.call?.reject("User cancelled photos app")
             return
         }
-        if multiple {
-            var images: [ProcessedImage] = []
-            var processedCount = 0
-            for img in results {
-                guard img.itemProvider.canLoadObject(ofClass: UIImage.self) else {
-                    self.call?.reject("Error loading image")
+        guard result.itemProvider.canLoadObject(ofClass: UIImage.self) else {
+            self.call?.reject("Error loading image")
+            return
+        }
+        // extract the image
+        result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] (reading, _) in
+            if let image = reading as? UIImage {
+                var asset: PHAsset?
+                if let assetId = result.assetIdentifier {
+                    asset = PHAsset.fetchAssets(withLocalIdentifiers: [assetId], options: nil).firstObject
+                }
+                if let processedImage = self?.processedImage(from: image, with: asset?.imageData) {
+                    self?.returnProcessedImage(processedImage)
                     return
                 }
-                // extract the image
-                img.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] (reading, _) in
-                    if let image = reading as? UIImage {
-                        var asset: PHAsset?
-                        if let assetId = img.assetIdentifier {
-                            asset = PHAsset.fetchAssets(withLocalIdentifiers: [assetId], options: nil).firstObject
-                        }
-                        if let processedImage = self?.processedImage(from: image, with: asset?.imageData) {
-                            images.append(processedImage)
-                        }
-                        processedCount += 1
-                        if processedCount == results.count {
-                            self?.returnImages(images)
-                        }
-                    } else {
-                        self?.call?.reject("Error loading image")
-                    }
-                }
             }
-
-        } else {
-            guard result.itemProvider.canLoadObject(ofClass: UIImage.self) else {
-                self.call?.reject("Error loading image")
-                return
-            }
-            // extract the image
-            result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] (reading, _) in
-                if let image = reading as? UIImage {
-                    var asset: PHAsset?
-                    if let assetId = result.assetIdentifier {
-                        asset = PHAsset.fetchAssets(withLocalIdentifiers: [assetId], options: nil).firstObject
-                    }
-                    if var processedImage = self?.processedImage(from: image, with: asset?.imageData) {
-                        processedImage.flags = .gallery
-                        self?.returnProcessedImage(processedImage)
-                        return
-                    }
-                }
-                self?.call?.reject("Error loading image")
-            }
+            self?.call?.reject("Error loading image")
         }
     }
 }
@@ -308,31 +192,7 @@ private extension CameraPlugin {
             return
         }
 
-        if settings.resultType == CameraResultType.uri || multiple {
-            guard let fileURL = try? saveTemporaryImage(jpeg),
-                  let webURL = bridge?.portablePath(fromLocalURL: fileURL) else {
-                call?.reject("Unable to get portable path to file")
-                return
-            }
-            if self.multiple {
-                call?.resolve([
-                    "photos": [[
-                        "path": fileURL.absoluteString,
-                        "exif": processedImage.exifData,
-                        "webPath": webURL.absoluteString,
-                        "format": "jpeg"
-                    ]]
-                ])
-                return
-            }
-            call?.resolve([
-                "path": fileURL.absoluteString,
-                "exif": processedImage.exifData,
-                "webPath": webURL.absoluteString,
-                "format": "jpeg",
-                "saved": isSaved
-            ])
-        } else if settings.resultType == CameraResultType.base64 {
+        if settings.resultType == CameraResultType.base64 {
             self.call?.resolve([
                 "base64String": jpeg.base64EncodedString(),
                 "exif": processedImage.exifData,
@@ -346,33 +206,20 @@ private extension CameraPlugin {
                 "format": "jpeg",
                 "saved": isSaved
             ])
-        }
-    }
-
-    func returnImages(_ processedImages: [ProcessedImage]) {
-        var photos: [PluginCallResultData] = []
-        for processedImage in processedImages {
-            guard let jpeg = processedImage.generateJPEG(with: settings.jpegQuality) else {
-                self.call?.reject("Unable to convert image to jpeg")
-                return
-            }
-
+        } else if settings.resultType == CameraResultType.uri {
             guard let fileURL = try? saveTemporaryImage(jpeg),
                   let webURL = bridge?.portablePath(fromLocalURL: fileURL) else {
                 call?.reject("Unable to get portable path to file")
                 return
             }
-
-            photos.append([
+            call?.resolve([
                 "path": fileURL.absoluteString,
                 "exif": processedImage.exifData,
                 "webPath": webURL.absoluteString,
-                "format": "jpeg"
+                "format": "jpeg",
+                "saved": isSaved
             ])
         }
-        call?.resolve([
-            "photos": photos
-        ])
     }
 
     func returnProcessedImage(_ processedImage: ProcessedImage) {
@@ -412,6 +259,7 @@ private extension CameraPlugin {
         // check if we have a camera
         if (bridge?.isSimEnvironment ?? false) || !UIImagePickerController.isSourceTypeAvailable(UIImagePickerController.SourceType.camera) {
             CAPLog.print("⚡️ ", self.pluginId, "-", "Camera not available in simulator")
+            bridge?.alert("Camera Error", "Camera not available in Simulator")
             call?.reject("Camera not available while running in Simulator")
             return
         }
@@ -502,7 +350,7 @@ private extension CameraPlugin {
     @available(iOS 14, *)
     func presentPhotoPicker() {
         var configuration = PHPickerConfiguration(photoLibrary: PHPhotoLibrary.shared())
-        configuration.selectionLimit = self.multiple ? (self.call?.getInt("limit") ?? 0) : 1
+        configuration.selectionLimit = 1
         configuration.filter = .images
         let picker = PHPickerViewController(configuration: configuration)
         picker.delegate = self

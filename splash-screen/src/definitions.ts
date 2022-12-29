@@ -10,7 +10,7 @@ declare module '@capacitor/cli' {
        * How long to show the launch splash screen when autoHide is enabled (in ms)
        *
        * @since 1.0.0
-       * @default 500
+       * @default 0
        * @example 3000
        */
       launchShowDuration?: number;
@@ -26,7 +26,7 @@ declare module '@capacitor/cli' {
 
       /**
        * Color of the background of the Splash Screen in hex format, #RRGGBB or #RRGGBBAA.
-       * Doesn't work if `useDialog` is true or on launch when using the Android 12 API.
+       * Doesn't work if `useDialog` is true.
        *
        * @since 1.0.0
        * @example "#ffffffff"
@@ -35,8 +35,6 @@ declare module '@capacitor/cli' {
 
       /**
        * Name of the resource to be used as Splash Screen.
-       *
-       * Doesn't work on launch when using the Android 12 API.
        *
        * Only available on Android.
        *
@@ -49,7 +47,7 @@ declare module '@capacitor/cli' {
       /**
        * The [ImageView.ScaleType](https://developer.android.com/reference/android/widget/ImageView.ScaleType) used to scale
        * the Splash Screen image.
-       * Doesn't work if `useDialog` is true or on launch when using the Android 12 API.
+       * Doesn't work if `useDialog` is true.
        *
        * Only available on Android.
        *
@@ -69,7 +67,7 @@ declare module '@capacitor/cli' {
 
       /**
        * Show a loading spinner on the Splash Screen.
-       * Doesn't work if `useDialog` is true or on launch when using the Android 12 API.
+       * Doesn't work if `useDialog` is true.
        *
        * @since 1.0.0
        * @example true
@@ -78,7 +76,7 @@ declare module '@capacitor/cli' {
 
       /**
        * Style of the Android spinner.
-       * Doesn't work if `useDialog` is true or on launch when using the Android 12 API.
+       * Doesn't work if `useDialog` is true.
        *
        * @since 1.0.0
        * @default large
@@ -106,7 +104,7 @@ declare module '@capacitor/cli' {
 
       /**
        * Color of the spinner in hex format, #RRGGBB or #RRGGBBAA.
-       * Doesn't work if `useDialog` is true or on launch when using the Android 12 API.
+       * Doesn't work if `useDialog` is true.
        *
        * @since 1.0.0
        * @example "#999999"
@@ -115,8 +113,6 @@ declare module '@capacitor/cli' {
 
       /**
        * Hide the status bar on the Splash Screen.
-       *
-       * Doesn't work on launch when using the Android 12 API.
        *
        * Only available on Android.
        *
@@ -127,8 +123,6 @@ declare module '@capacitor/cli' {
 
       /**
        * Hide the status bar and the software navigation buttons on the Splash Screen.
-       *
-       * Doesn't work on launch when using the Android 12 API.
        *
        * Only available on Android.
        *
@@ -141,8 +135,6 @@ declare module '@capacitor/cli' {
        * If `useDialog` is set to true, configure the Dialog layout.
        * If `useDialog` is not set or false, use a layout instead of the ImageView.
        *
-       * Doesn't work on launch when using the Android 12 API.
-       *
        * Only available on Android.
        *
        * @since 1.1.0
@@ -154,8 +146,6 @@ declare module '@capacitor/cli' {
        * Use a Dialog instead of an ImageView.
        * If `layoutName` is not configured, it will use
        * a layout that uses the splash image as background.
-       *
-       * Doesn't work on launch when using the Android 12 API.
        *
        * Only available on Android.
        *

@@ -19,14 +19,6 @@ public class AppPlugin: CAPPlugin {
             ])
         })
 
-        observers.append(NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: OperationQueue.main) { [weak self] (_) in
-            self?.notifyListeners("pause", data: nil)
-        })
-
-        observers.append(NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: OperationQueue.main) { [weak self] (_) in
-            self?.notifyListeners("resume", data: nil)
-        })
-
     }
 
     deinit {
@@ -99,9 +91,5 @@ public class AppPlugin: CAPPlugin {
                 "isActive": UIApplication.shared.applicationState == UIApplication.State.active
             ])
         }
-    }
-
-    @objc func minimizeApp(_ call: CAPPluginCall) {
-        call.unimplemented()
     }
 }

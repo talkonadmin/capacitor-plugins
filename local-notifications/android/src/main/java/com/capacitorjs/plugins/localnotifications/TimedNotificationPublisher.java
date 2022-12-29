@@ -7,7 +7,6 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Logger;
 import java.text.SimpleDateFormat;
@@ -29,8 +28,6 @@ public class TimedNotificationPublisher extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         Notification notification = intent.getParcelableExtra(NOTIFICATION_KEY);
-        notification.when = System.currentTimeMillis();
-
         int id = intent.getIntExtra(LocalNotificationManager.NOTIFICATION_INTENT_KEY, Integer.MIN_VALUE);
         if (id == Integer.MIN_VALUE) {
             Logger.error(Logger.tags("LN"), "No valid id supplied", null);
@@ -51,16 +48,8 @@ public class TimedNotificationPublisher extends BroadcastReceiver {
             AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
             long trigger = date.nextTrigger(new Date());
             Intent clone = (Intent) intent.clone();
-            int flags = PendingIntent.FLAG_CANCEL_CURRENT;
-            if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                flags = flags | PendingIntent.FLAG_MUTABLE;
-            }
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(context, id, clone, flags);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
-                alarmManager.set(AlarmManager.RTC, trigger, pendingIntent);
-            } else {
-                alarmManager.setExact(AlarmManager.RTC, trigger, pendingIntent);
-            }
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(context, id, clone, PendingIntent.FLAG_CANCEL_CURRENT);
+            alarmManager.setExact(AlarmManager.RTC, trigger, pendingIntent);
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
             Logger.debug(Logger.tags("LN"), "notification " + id + " will next fire at " + sdf.format(new Date(trigger)));
             return true;

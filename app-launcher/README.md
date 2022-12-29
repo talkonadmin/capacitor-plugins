@@ -30,7 +30,7 @@ import { AppLauncher } from '@capacitor/app-launcher';
 const checkCanOpenUrl = async () => {
   const { value } = await AppLauncher.canOpenUrl({ url: 'com.getcapacitor.myapp' });
 
-  console.log('Can open url: ', value);
+  alert('Can open url: ', value);
 };
 
 const openPortfolioPage = async () => {

@@ -28,7 +28,11 @@ public class StatusBarPlugin: CAPPlugin {
             if style == "DARK" {
                 bridge?.statusBarStyle = .lightContent
             } else if style == "LIGHT" {
-                bridge?.statusBarStyle = .darkContent
+                if #available(iOS 13.0, *) {
+                    bridge?.statusBarStyle = .darkContent
+                } else {
+                    bridge?.statusBarStyle = .default
+                }
             } else if style == "DEFAULT" {
                 bridge?.statusBarStyle = .default
             }
@@ -70,17 +74,25 @@ public class StatusBarPlugin: CAPPlugin {
                 return
             }
             let style: String
-            switch bridge.statusBarStyle {
-            case .default:
-                if bridge.userInterfaceStyle == UIUserInterfaceStyle.dark {
+            if #available(iOS 13.0, *) {
+                switch bridge.statusBarStyle {
+                case .default:
+                    if bridge.userInterfaceStyle == UIUserInterfaceStyle.dark {
+                        style = "DARK"
+                    } else {
+                        style = "LIGHT"
+                    }
+                case .lightContent:
+                    style = "DARK"
+                default:
+                    style = "LIGHT"
+                }
+            } else {
+                if bridge.statusBarStyle == .lightContent {
                     style = "DARK"
                 } else {
                     style = "LIGHT"
                 }
-            case .lightContent:
-                style = "DARK"
-            default:
-                style = "LIGHT"
             }
 
             call.resolve([

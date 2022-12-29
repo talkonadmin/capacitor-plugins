@@ -21,7 +21,7 @@ ScreenReader.addListener('screenReaderStateChange', ({ value }) => {
 const checkScreenReaderEnabled = async () => {
   const { value } = await ScreenReader.isEnabled();
 
-  console.log('Voice over enabled? ' + value);
+  alert('Voice over enabled? ' + value);
 };
 
 const sayHello = async () => {
@@ -35,7 +35,7 @@ const sayHello = async () => {
 
 * [`isEnabled()`](#isenabled)
 * [`speak(...)`](#speak)
-* [`addListener('stateChange', ...)`](#addlistenerstatechange)
+* [`addListener('stateChange', ...)`](#addlistenerstatechange-)
 * [`removeAllListeners()`](#removealllisteners)
 * [Interfaces](#interfaces)
 * [Type Aliases](#type-aliases)

@@ -38,9 +38,6 @@ declare module '@capacitor/cli' {
        * On Android 26+ it sets the default channel sound and can't be
        * changed unless the app is uninstalled.
        *
-       * If the audio file is not found, it will result in the default system
-       * sound being played on Android 21-25 and no sound on Android 26+.
-       *
        * Only available for Android.
        *
        * @since 1.0.0
@@ -57,14 +54,14 @@ export interface LocalNotificationsPlugin {
    *
    * @since 1.0.0
    */
-  schedule(options: ScheduleOptions): Promise<ScheduleResult>;
+  schedule (options: ScheduleOptions): Promise<ScheduleResult>;
 
   /**
    * Get a list of pending notifications.
    *
    * @since 1.0.0
    */
-  getPending(): Promise<PendingResult>;
+  getPending (): Promise<PendingResult>;
 
   /**
    * Register actions to take when notifications are displayed.
@@ -73,14 +70,14 @@ export interface LocalNotificationsPlugin {
    *
    * @since 1.0.0
    */
-  registerActionTypes(options: RegisterActionTypesOptions): Promise<void>;
+  registerActionTypes (options: RegisterActionTypesOptions): Promise<void>;
 
   /**
    * Cancel pending notifications.
    *
    * @since 1.0.0
    */
-  cancel(options: CancelOptions): Promise<void>;
+  cancel (options: CancelOptions): Promise<void>;
 
   /**
    * Check if notifications are enabled or not.
@@ -89,30 +86,7 @@ export interface LocalNotificationsPlugin {
    * notifications to be displayed.
    * @since 1.0.0
    */
-  areEnabled(): Promise<EnabledResult>;
-
-  /**
-   * Get a list of notifications that are visible on the notifications screen.
-   *
-   * @since 4.0.0
-   */
-  getDeliveredNotifications(): Promise<DeliveredNotifications>;
-
-  /**
-   * Remove the specified notifications from the notifications screen.
-   *
-   * @since 4.0.0
-   */
-  removeDeliveredNotifications(
-    delivered: DeliveredNotifications,
-  ): Promise<void>;
-
-  /**
-   * Remove all the notifications from the notifications screen.
-   *
-   * @since 4.0.0
-   */
-  removeAllDeliveredNotifications(): Promise<void>;
+  areEnabled (): Promise<EnabledResult>;
 
   /**
    * Create a notification channel.
@@ -121,7 +95,7 @@ export interface LocalNotificationsPlugin {
    *
    * @since 1.0.0
    */
-  createChannel(channel: Channel): Promise<void>;
+  createChannel (channel: NotificationChannel): Promise<void>;
 
   /**
    * Delete a notification channel.
@@ -130,7 +104,7 @@ export interface LocalNotificationsPlugin {
    *
    * @since 1.0.0
    */
-  deleteChannel(args: { id: string }): Promise<void>;
+  deleteChannel (channel: NotificationChannel): Promise<void>;
 
   /**
    * Get a list of notification channels.
@@ -139,28 +113,28 @@ export interface LocalNotificationsPlugin {
    *
    * @since 1.0.0
    */
-  listChannels(): Promise<ListChannelsResult>;
+  listChannels (): Promise<ListChannelsResult>;
 
   /**
    * Check permission to display local notifications.
    *
    * @since 1.0.0
    */
-  checkPermissions(): Promise<PermissionStatus>;
+  checkPermissions (): Promise<PermissionStatus>;
 
   /**
    * Request permission to display local notifications.
    *
    * @since 1.0.0
    */
-  requestPermissions(): Promise<PermissionStatus>;
+  requestPermissions (): Promise<PermissionStatus>;
 
   /**
    * Listen for when notifications are displayed.
    *
    * @since 1.0.0
    */
-  addListener(
+  addListener (
     eventName: 'localNotificationReceived',
     listenerFunc: (notification: LocalNotificationSchema) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
@@ -170,7 +144,7 @@ export interface LocalNotificationsPlugin {
    *
    * @since 1.0.0
    */
-  addListener(
+  addListener (
     eventName: 'localNotificationActionPerformed',
     listenerFunc: (notificationAction: ActionPerformed) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
@@ -180,7 +154,7 @@ export interface LocalNotificationsPlugin {
    *
    * @since 1.0.0
    */
-  removeAllListeners(): Promise<void>;
+  removeAllListeners (): Promise<void>;
 }
 
 /**
@@ -543,8 +517,6 @@ export interface LocalNotificationSchema {
   summaryText?: string;
   /**
    * The notification identifier.
-   * On Android it's a 32-bit int.
-   * So the value should be between -2147483648 and 2147483647 inclusive.
    *
    * @since 1.0.0
    */
@@ -567,12 +539,7 @@ export interface LocalNotificationSchema {
    *
    * Recommended format is `.wav` because is supported by both iOS and Android.
    *
-   * Only available for iOS and Android < 26.
-   * For Android 26+ use channelId of a channel configured with the desired sound.
-   *
-   * If the sound file is not found, (i.e. empty string or wrong name)
-   * the default system notification sound will be used.
-   * If not provided, it will produce the default sound on Android and no sound on iOS.
+   * Only available for iOS and Android 26+.
    *
    * @since 1.0.0
    */
@@ -655,7 +622,7 @@ export interface LocalNotificationSchema {
    * Sets `summaryArgument` on the
    * [`UNMutableNotificationContent`](https://developer.apple.com/documentation/usernotifications/unmutablenotificationcontent).
    *
-   * Only available for iOS.
+   * Only available for iOS 12+.
    *
    * @since 1.0.0
    */
@@ -810,7 +777,7 @@ export interface ScheduleOn {
   year?: number;
   month?: number;
   day?: number;
-  weekday?: Weekday;
+  weekday?: number;
   hour?: number;
   minute?: number;
   second?: number;
@@ -881,121 +848,6 @@ export interface EnabledResult {
   value: boolean;
 }
 
-export interface DeliveredNotificationSchema {
-  /**
-   * The notification identifier.
-   *
-   * @since 4.0.0
-   */
-  id: number;
-
-  /**
-   * The notification tag.
-   *
-   * Only available on Android.
-   *
-   * @since 4.0.0
-   */
-  tag?: string;
-  /**
-   * The title of the notification.
-   *
-   * @since 4.0.0
-   */
-  title: string;
-
-  /**
-   * The body of the notification, shown below the title.
-   *
-   * @since 4.0.0
-   */
-  body: string;
-
-  /**
-   * The configured group of the notification.
-   *
-   *
-   * Only available for Android.
-   *
-   * @since 4.0.0
-   */
-  group?: string;
-
-  /**
-   * If this notification is the summary for a group of notifications.
-   *
-   * Only available for Android.
-   *
-   * @since 4.0.0
-   */
-  groupSummary?: boolean;
-
-  /**
-   * Any additional data that was included in the
-   * notification payload.
-   *
-   * Only available for Android.
-   *
-   * @since 4.0.0
-   */
-  data?: any;
-
-  /**
-   * Extra data to store within this notification.
-   *
-   * Only available for iOS.
-   *
-   * @since 4.0.0
-   */
-  extra?: any;
-
-  /**
-   * The attachments for this notification.
-   *
-   * Only available for iOS.
-   *
-   * @since 1.0.0
-   */
-  attachments?: Attachment[];
-
-  /**
-   * Action type ssociated with this notification.
-   *
-   * Only available for iOS.
-   *
-   * @since 4.0.0
-   */
-  actionTypeId?: string;
-
-  /**
-   * Schedule used to fire this notification.
-   *
-   * Only available for iOS.
-   *
-   * @since 4.0.0
-   */
-  schedule?: Schedule;
-
-  /**
-   * Sound that was used when the notification was displayed.
-   *
-   * Only available for iOS.
-   *
-   * @since 4.0.0
-   */
-  sound?: string;
-}
-
-export interface DeliveredNotifications {
-  /**
-   * List of notifications that are visible on the
-   * notifications screen.
-   *
-   * @since 1.0.0
-   */
-  notifications: DeliveredNotificationSchema[];
-}
-
 export interface Channel {
   /**
    * The channel identifier.
@@ -1027,8 +879,6 @@ export interface Channel {
    * The file name of a sound file should be specified relative to the android
    * app `res/raw` directory.
    *
-   * If the sound is not provided, or the sound file is not found no sound will be used.
-   *
    * @since 1.0.0
    * @example "jingle.wav"
    */
@@ -1037,10 +887,9 @@ export interface Channel {
   /**
    * The level of interruption for notifications posted to this channel.
    *
-   * @default `3`
    * @since 1.0.0
    */
-  importance?: Importance;
+  importance: Importance;
 
   /**
    * The visibility of notifications posted to this channel.
@@ -1078,19 +927,6 @@ export interface Channel {
    * @since 1.0.0
    */
   vibration?: boolean;
-}
-
-/**
- * Day of the week. Used for scheduling notifications on a particular weekday.
- */
-export enum Weekday {
-  Sunday = 1,
-  Monday = 2,
-  Tuesday = 3,
-  Wednesday = 4,
-  Thursday = 5,
-  Friday = 6,
-  Saturday = 7,
 }
 
 /**

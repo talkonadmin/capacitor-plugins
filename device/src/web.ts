@@ -6,7 +6,6 @@ import type {
   DeviceInfo,
   DevicePlugin,
   GetLanguageCodeResult,
-  LanguageTag,
 } from './definitions';
 
 declare global {
@@ -67,12 +66,6 @@ export class DeviceWeb extends WebPlugin implements DevicePlugin {
   }
 
   async getLanguageCode(): Promise<GetLanguageCodeResult> {
-    return {
-      value: navigator.language.split('-')[0].toLowerCase(),
-    };
-  }
-
-  async getLanguageTag(): Promise<LanguageTag> {
     return {
       value: navigator.language,
     };
@@ -178,7 +171,7 @@ export class DeviceWeb extends WebPlugin implements DevicePlugin {
   }
 
   getUid(): string {
-    if (typeof window !== 'undefined' && window.localStorage) {
+    if (typeof window !== 'undefined') {
       let uid = window.localStorage.getItem('_capuid');
       if (uid) {
         return uid;

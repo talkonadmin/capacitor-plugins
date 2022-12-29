@@ -33,8 +33,6 @@ public class DevicePlugin extends Plugin {
         r.put("memUsed", implementation.getMemUsed());
         r.put("diskFree", implementation.getDiskFree());
         r.put("diskTotal", implementation.getDiskTotal());
-        r.put("realDiskFree", implementation.getRealDiskFree());
-        r.put("realDiskTotal", implementation.getRealDiskTotal());
         r.put("model", android.os.Build.MODEL);
         r.put("operatingSystem", "android");
         r.put("osVersion", android.os.Build.VERSION.RELEASE);
@@ -61,13 +59,6 @@ public class DevicePlugin extends Plugin {
     public void getLanguageCode(PluginCall call) {
         JSObject ret = new JSObject();
         ret.put("value", Locale.getDefault().getLanguage());
-        call.resolve(ret);
-    }
-
-    @PluginMethod
-    public void getLanguageTag(PluginCall call) {
-        JSObject ret = new JSObject();
-        ret.put("value", Locale.getDefault().toLanguageTag());
         call.resolve(ret);
     }
 }

@@ -6,7 +6,6 @@ import android.content.pm.PackageInfo;
 import android.net.Uri;
 import android.os.Build;
 import androidx.activity.OnBackPressedCallback;
-import androidx.core.content.pm.PackageInfoCompat;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Logger;
 import com.getcapacitor.Plugin;
@@ -21,9 +20,6 @@ public class AppPlugin extends Plugin {
     private static final String EVENT_URL_OPEN = "appUrlOpen";
     private static final String EVENT_STATE_CHANGE = "appStateChange";
     private static final String EVENT_RESTORED_RESULT = "appRestoredResult";
-    private static final String EVENT_PAUSE = "pause";
-    private static final String EVENT_RESUME = "resume";
-    private boolean hasPausedEver = false;
 
     public void load() {
         bridge
@@ -62,10 +58,16 @@ public class AppPlugin extends Plugin {
         getActivity().getOnBackPressedDispatcher().addCallback(getActivity(), callback);
     }
 
+    @Override
+    @PluginMethod(returnType = PluginMethod.RETURN_NONE)
+    public void removeAllListeners(PluginCall call) {
+        super.removeAllListeners(call);
+        unsetAppListeners();
+    }
+
     @PluginMethod
     public void exitApp(PluginCall call) {
         unsetAppListeners();
-        call.resolve();
         getBridge().getActivity().finish();
     }
 
@@ -79,7 +81,11 @@ public class AppPlugin extends Plugin {
             String appName = stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : getContext().getString(stringId);
             data.put("name", appName);
             data.put("id", pinfo.packageName);
-            data.put("build", Integer.toString((int) PackageInfoCompat.getLongVersionCode(pinfo)));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                data.put("build", Long.toString(pinfo.getLongVersionCode()));
+            } else {
+                data.put("build", Integer.toString(pinfo.versionCode));
+            }
             data.put("version", pinfo.versionName);
             call.resolve(data);
         } catch (Exception ex) {
@@ -106,15 +112,6 @@ public class AppPlugin extends Plugin {
         call.resolve(data);
     }
 
-    @PluginMethod
-    public void minimizeApp(PluginCall call) {
-        Intent startMain = new Intent(Intent.ACTION_MAIN);
-        startMain.addCategory(Intent.CATEGORY_HOME);
-        startMain.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        getActivity().startActivity(startMain);
-        call.resolve();
-    }
-
     /**
      * Handle ACTION_VIEW intents to store a URL that was used to open the app
      * @param intent
@@ -133,21 +130,6 @@ public class AppPlugin extends Plugin {
         JSObject ret = new JSObject();
         ret.put("url", url.toString());
         notifyListeners(EVENT_URL_OPEN, ret, true);
-    }
-
-    @Override
-    protected void handleOnPause() {
-        super.handleOnPause();
-        hasPausedEver = true;
-        notifyListeners(EVENT_PAUSE, null);
-    }
-
-    @Override
-    protected void handleOnResume() {
-        super.handleOnResume();
-        if (hasPausedEver) {
-            notifyListeners(EVENT_RESUME, null);
-        }
     }
 
     @Override

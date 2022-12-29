@@ -72,18 +72,18 @@ public class Filesystem {
         return created;
     }
 
-    public File[] readdir(String path, String directory) throws DirectoryNotFoundException {
-        File[] files = null;
+    public String[] readdir(String path, String directory) throws DirectoryNotFoundException {
+        String[] files = null;
         File fileObject = getFileObject(path, directory);
         if (fileObject != null && fileObject.exists()) {
-            files = fileObject.listFiles();
+            files = fileObject.list();
         } else {
             throw new DirectoryNotFoundException("Directory does not exist");
         }
         return files;
     }
 
-    public File copy(String from, String directory, String to, String toDirectory, boolean doRename)
+    public boolean copy(String from, String directory, String to, String toDirectory, boolean doRename)
         throws IOException, CopyFailedException {
         if (toDirectory == null) {
             toDirectory = directory;
@@ -100,7 +100,7 @@ public class Filesystem {
         }
 
         if (toObject.equals(fromObject)) {
-            return toObject;
+            return true;
         }
 
         if (!fromObject.exists()) {
@@ -130,7 +130,7 @@ public class Filesystem {
             copyRecursively(fromObject, toObject);
         }
 
-        return toObject;
+        return true;
     }
 
     public InputStream getInputStream(String path, String directory) throws IOException {
@@ -180,14 +180,12 @@ public class Filesystem {
         return Base64.encodeToString(byteStream.toByteArray(), Base64.NO_WRAP);
     }
 
-    @SuppressWarnings("deprecation")
     public File getDirectory(String directory) {
         Context c = this.context;
         switch (directory) {
             case "DOCUMENTS":
                 return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
             case "DATA":
-            case "LIBRARY":
                 return c.getFilesDir();
             case "CACHE":
                 return c.getCacheDir();

@@ -23,29 +23,6 @@ export interface CameraPlugin {
   getPhoto(options: ImageOptions): Promise<Photo>;
 
   /**
-   * Allows the user to pick multiple pictures from the photo gallery.
-   * On iOS 13 and older it only allows to pick one picture.
-   *
-   * @since 1.2.0
-   */
-  pickImages(options: GalleryImageOptions): Promise<GalleryPhotos>;
-
-  /**
-   * iOS 14+ Only: Allows the user to update their limited photo library selection.
-   * On iOS 15+ returns all the limited photos after the picker dismissal.
-   * On iOS 14 or if the user gave full access to the photos it returns an empty array.
-   *
-   * @since 4.1.0
-   */
-  pickLimitedLibraryPhotos(): Promise<GalleryPhotos>;
-  /**
-   * iOS 14+ Only: Return an array of photos selected from the limited photo library.
-   *
-   * @since 4.1.0
-   */
-  getLimitedLibraryPhotos(): Promise<GalleryPhotos>;
-
-  /**
    * Check camera and photo album permissions
    *
    * @since 1.0.0
@@ -70,8 +47,7 @@ export interface ImageOptions {
    */
   quality?: number;
   /**
-   * Whether to allow the user to crop or make small edits (platform specific).
-   * On iOS 14+ it's only supported for CameraSource.Camera, but not for CameraSource.Photos.
+   * Whether to allow the user to crop or make small edits (platform specific)
    *
    * @since 1.0.0
    */
@@ -91,17 +67,25 @@ export interface ImageOptions {
    */
   saveToGallery?: boolean;
   /**
-   * The desired maximum width of the saved image. The aspect ratio is respected.
+   * The width of the saved image
    *
    * @since 1.0.0
    */
   width?: number;
   /**
-   * The desired maximum height of the saved image. The aspect ratio is respected.
+   * The height of the saved image
    *
    * @since 1.0.0
    */
   height?: number;
+  /**
+   * This setting has no effect.
+   * Picture resizing always preserve aspect ratio.
+   *
+   * @deprecated will be removed in next major version.
+   * @since 1.0.0
+   */
+  preserveAspectRatio?: boolean;
   /**
    * Whether to automatically rotate the image "up" to correct for orientation
    * in portrait mode
@@ -139,7 +123,7 @@ export interface ImageOptions {
    * default is to use PWA Elements if installed and fall back to file input.
    * To always use file input, set this to `true`.
    *
-   * Learn more about PWA Elements: https://capacitorjs.com/docs/web/pwa-elements
+   * Learn more about PWA Elements: https://capacitorjs.com/docs/pwa-elements
    *
    * @since 1.0.0
    */
@@ -197,7 +181,7 @@ export interface Photo {
   dataUrl?: string;
   /**
    * If using CameraResultType.Uri, the path will contain a full,
-   * platform-specific file URL that can be read later using the Filesystem API.
+   * platform-specific file URL that can be read later using the Filsystem API.
    *
    * @since 1.0.0
    */
@@ -236,90 +220,6 @@ export interface Photo {
   saved: boolean;
 }
 
-export interface GalleryPhotos {
-  /**
-   * Array of all the picked photos.
-   *
-   * @since 1.2.0
-   */
-  photos: GalleryPhoto[];
-}
-
-export interface GalleryPhoto {
-  /**
-   * Full, platform-specific file URL that can be read later using the Filesystem API.
-   *
-   * @since 1.2.0
-   */
-  path?: string;
-  /**
-   * webPath returns a path that can be used to set the src attribute of an image for efficient
-   * loading and rendering.
-   *
-   * @since 1.2.0
-   */
-  webPath: string;
-  /**
-   * Exif data, if any, retrieved from the image
-   *
-   * @since 1.2.0
-   */
-  exif?: any;
-  /**
-   * The format of the image, ex: jpeg, png, gif.
-   *
-   * iOS and Android only support jpeg.
-   * Web supports jpeg, png and gif.
-   *
-   * @since 1.2.0
-   */
-  format: string;
-}
-export interface GalleryImageOptions {
-  /**
-   * The quality of image to return as JPEG, from 0-100
-   *
-   * @since 1.2.0
-   */
-  quality?: number;
-  /**
-   * The desired maximum width of the saved image. The aspect ratio is respected.
-   *
-   * @since 1.2.0
-   */
-  width?: number;
-  /**
-   * The desired maximum height of the saved image. The aspect ratio is respected.
-   *
-   * @since 1.2.0
-   */
-  height?: number;
-  /**
-   * Whether to automatically rotate the image "up" to correct for orientation
-   * in portrait mode
-   * @default: true
-   *
-   * @since 1.2.0
-   */
-  correctOrientation?: boolean;
-
-  /**
-   * iOS only: The presentation style of the Camera.
-   * @default: 'fullscreen'
-   *
-   * @since 1.2.0
-   */
-  presentationStyle?: 'fullscreen' | 'popover';
-
-  /**
-   * iOS only: Maximum number of pictures the user will be able to choose.
-   * @default 0 (unlimited)
-   *
-   * @since 1.2.0
-   */
-  limit?: number;
-}
-
 export enum CameraSource {
   /**
    * Prompts the user to select either the photo album or take a photo.
@@ -330,7 +230,7 @@ export enum CameraSource {
    */
   Camera = 'CAMERA',
   /**
-   * Pick an existing photo from the gallery or photo album.
+   * Pick an existing photo fron the gallery or photo album.
    */
   Photos = 'PHOTOS',
 }

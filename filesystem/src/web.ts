@@ -3,7 +3,6 @@ import { WebPlugin } from '@capacitor/core';
 import type {
   AppendFileOptions,
   CopyOptions,
-  CopyResult,
   DeleteFileOptions,
   FilesystemPlugin,
   GetUriOptions,
@@ -171,14 +170,14 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
    */
   async writeFile(options: WriteFileOptions): Promise<WriteFileResult> {
     const path: string = this.getPath(options.directory, options.path);
-    let data = options.data;
-    const encoding = options.encoding;
+    const data = options.data;
     const doRecursive = options.recursive;
 
     const occupiedEntry = (await this.dbRequest('get', [path])) as EntryObj;
     if (occupiedEntry && occupiedEntry.type === 'directory')
-      throw Error('The supplied path is a directory.');
+      throw 'The supplied path is a directory.';
 
+    const encoding = options.encoding;
     const parentPath = path.substr(0, path.lastIndexOf('/'));
 
     const parentEntry = (await this.dbRequest('get', [parentPath])) as EntryObj;
@@ -193,13 +192,6 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
         });
       }
     }
-
-    if (!encoding) {
-      data = data.indexOf(',') >= 0 ? data.split(',')[1] : data;
-      if (!this.isBase64String(data))
-        throw Error('The supplied data is not valid base64 content.');
-    }
-
     const now = Date.now();
     const pathObj: EntryObj = {
       path: path,
@@ -208,7 +200,7 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
       size: data.length,
       ctime: now,
       mtime: now,
-      content: data,
+      content: !encoding && data.indexOf(',') >= 0 ? data.split(',')[1] : data,
     };
     await this.dbRequest('put', [pathObj]);
     return {
@@ -224,7 +216,7 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
   async appendFile(options: AppendFileOptions): Promise<void> {
     const path: string = this.getPath(options.directory, options.path);
     let data = options.data;
-    const encoding = options.encoding;
+    // const encoding = options.encoding;
     const parentPath = path.substr(0, path.lastIndexOf('/'));
 
     const now = Date.now();
@@ -232,7 +224,7 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
 
     const occupiedEntry = (await this.dbRequest('get', [path])) as EntryObj;
     if (occupiedEntry && occupiedEntry.type === 'directory')
-      throw Error('The supplied path is a directory.');
+      throw 'The supplied path is a directory.';
 
     const parentEntry = (await this.dbRequest('get', [parentPath])) as EntryObj;
     if (parentEntry === undefined) {
@@ -247,15 +239,8 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
       }
     }
 
-    if (!encoding && !this.isBase64String(data))
-      throw Error('The supplied data is not valid base64 content.');
-
     if (occupiedEntry !== undefined) {
-      if (occupiedEntry.content !== undefined && !encoding) {
-        data = btoa(atob(occupiedEntry.content) + atob(data));
-      } else {
-        data = occupiedEntry.content + data;
-      }
+      data = occupiedEntry.content + data;
       ctime = occupiedEntry.ctime;
     }
     const pathObj: EntryObj = {
@@ -348,7 +333,7 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
       throw Error('Folder is not empty');
 
     for (const entry of readDirResult.files) {
-      const entryPath = `${path}/${entry.name}`;
+      const entryPath = `${path}/${entry}`;
       const entryObj = await this.stat({ path: entryPath, directory });
       if (entryObj.type === 'file') {
         await this.deleteFile({ path: entryPath, directory });
@@ -377,23 +362,10 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
       'getAllKeys',
       [IDBKeyRange.only(path)],
     );
-    const files = await Promise.all(
-      entries.map(async e => {
-        let subEntry = (await this.dbRequest('get', [e])) as EntryObj;
-        if (subEntry === undefined) {
-          subEntry = (await this.dbRequest('get', [e + '/'])) as EntryObj;
-        }
-        return {
-          name: e.substring(path.length + 1),
-          type: subEntry.type,
-          size: subEntry.size,
-          ctime: subEntry.ctime,
-          mtime: subEntry.mtime,
-          uri: subEntry.path,
-        };
-      }),
-    );
-    return { files: files };
+    const names = entries.map(e => {
+      return e.substring(path.length + 1);
+    });
+    return { files: names };
   }
 
   /**
@@ -442,8 +414,7 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
    * @return a promise that resolves with the rename result
    */
   async rename(options: RenameOptions): Promise<void> {
-    await this._copy(options, true);
-    return;
+    return this._copy(options, true);
   }
 
   /**
@@ -451,7 +422,7 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
    * @param options the options for the copy operation
    * @return a promise that resolves with the copy result
    */
-  async copy(options: CopyOptions): Promise<CopyResult> {
+  async copy(options: CopyOptions): Promise<void> {
     return this._copy(options, false);
   }
 
@@ -469,10 +440,7 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
    * @param doRename whether to perform a rename or copy operation
    * @return a promise that resolves with the result
    */
-  private async _copy(
-    options: CopyOptions,
-    doRename = false,
-  ): Promise<CopyResult> {
+  private async _copy(options: CopyOptions, doRename = false): Promise<void> {
     let { toDirectory } = options;
     const { to, from, directory: fromDirectory } = options;
 
@@ -490,9 +458,7 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
 
     // Test that the "to" and "from" locations are different
     if (fromPath === toPath) {
-      return {
-        uri: toPath,
-      };
+      return;
     }
 
     if (isPathParent(fromPath, toPath)) {
@@ -565,7 +531,7 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
         }
 
         // Write the file to the new location
-        const writeResult = await this.writeFile({
+        await this.writeFile({
           path: to,
           directory: toDirectory,
           data: file.data,
@@ -577,7 +543,7 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
         }
 
         // Resolve promise
-        return writeResult;
+        return;
       }
       case 'directory': {
         if (toObj) {
@@ -630,24 +596,13 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
         }
       }
     }
-    return {
-      uri: toPath,
-    };
-  }
-
-  private isBase64String(str: string): boolean {
-    try {
-      return btoa(atob(str)) == str;
-    } catch (err) {
-      return false;
-    }
   }
 }
 
 interface EntryObj {
   path: string;
   folder: string;
-  type: 'directory' | 'file';
+  type: string;
   size: number;
   ctime: number;
   mtime: number;

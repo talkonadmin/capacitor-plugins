@@ -64,8 +64,8 @@ public class LocalNotificationSchedule {
             this.on = new DateMatch();
             on.setYear(onJson.getInteger("year"));
             on.setMonth(onJson.getInteger("month"));
+            on.setWeekday(onJson.getInteger("weekday") != null ? onJson.getInteger("weekday") + 1 : null);
             on.setDay(onJson.getInteger("day"));
-            on.setWeekday(onJson.getInteger("weekday"));
             on.setHour(onJson.getInteger("hour"));
             on.setMinute(onJson.getInteger("minute"));
             on.setSecond(onJson.getInteger("second"));
@@ -141,8 +141,7 @@ public class LocalNotificationSchedule {
     public Long getEveryInterval() {
         switch (every) {
             case "year":
-                // This case is just approximation as not all years have the same number of days
-                return count * DateUtils.WEEK_IN_MILLIS * 52;
+                return count * DateUtils.YEAR_IN_MILLIS;
             case "month":
                 // This case is just approximation as months have different number of days
                 return count * 30 * DateUtils.DAY_IN_MILLIS;

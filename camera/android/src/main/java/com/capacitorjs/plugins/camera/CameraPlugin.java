@@ -2,19 +2,13 @@ package com.capacitorjs.plugins.camera;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.ActivityNotFoundException;
-import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.util.Base64;
 import androidx.activity.result.ActivityResult;
@@ -38,13 +32,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import org.json.JSONException;
 
 /**
@@ -77,7 +67,6 @@ public class CameraPlugin extends Plugin {
     private static final String PERMISSION_DENIED_ERROR_PHOTOS = "User denied access to photos";
     private static final String NO_CAMERA_ERROR = "Device doesn't have a camera available";
     private static final String NO_CAMERA_ACTIVITY_ERROR = "Unable to resolve camera activity";
-    private static final String NO_PHOTO_ACTIVITY_ERROR = "Unable to resolve photo activity";
     private static final String IMAGE_FILE_SAVE_ERROR = "Unable to create photo on disk";
     private static final String IMAGE_PROCESS_NO_FILE_ERROR = "Unable to process image, file not found on disk";
     private static final String UNABLE_TO_PROCESS_IMAGE = "Unable to process image";
@@ -99,22 +88,6 @@ public class CameraPlugin extends Plugin {
         isEdited = false;
         settings = getSettings(call);
         doShow(call);
-    }
-
-    @PluginMethod
-    public void pickImages(PluginCall call) {
-        settings = getSettings(call);
-        openPhotos(call, true, false);
-    }
-
-    @PluginMethod
-    public void pickLimitedLibraryPhotos(PluginCall call) {
-        call.unimplemented("not supported on android");
-    }
-
-    @PluginMethod
-    public void getLimitedLibraryPhotos(PluginCall call) {
-        call.unimplemented("not supported on android");
     }
 
     private void doShow(PluginCall call) {
@@ -209,20 +182,17 @@ public class CameraPlugin extends Plugin {
      */
     @PermissionCallback
     private void cameraPermissionsCallback(PluginCall call) {
-        if (call.getMethodName().equals("pickImages")) {
-            openPhotos(call, true, true);
-        } else {
-            if (settings.getSource() == CameraSource.CAMERA && getPermissionState(CAMERA) != PermissionState.GRANTED) {
-                Logger.debug(getLogTag(), "User denied camera permission: " + getPermissionState(CAMERA).toString());
-                call.reject(PERMISSION_DENIED_ERROR_CAMERA);
-                return;
-            } else if (settings.getSource() == CameraSource.PHOTOS && getPermissionState(PHOTOS) != PermissionState.GRANTED) {
-                Logger.debug(getLogTag(), "User denied photos permission: " + getPermissionState(PHOTOS).toString());
-                call.reject(PERMISSION_DENIED_ERROR_PHOTOS);
-                return;
-            }
-            doShow(call);
+        if (settings.getSource() == CameraSource.CAMERA && getPermissionState(CAMERA) != PermissionState.GRANTED) {
+            Logger.debug(getLogTag(), "User denied camera permission: " + getPermissionState(CAMERA).toString());
+            call.reject(PERMISSION_DENIED_ERROR_CAMERA);
+            return;
+        } else if (settings.getSource() == CameraSource.PHOTOS && getPermissionState(PHOTOS) != PermissionState.GRANTED) {
+            Logger.debug(getLogTag(), "User denied photos permission: " + getPermissionState(PHOTOS).toString());
+            call.reject(PERMISSION_DENIED_ERROR_PHOTOS);
+            return;
         }
+
+        doShow(call);
     }
 
     private CameraSettings getSettings(PluginCall call) {
@@ -248,7 +218,7 @@ public class CameraPlugin extends Plugin {
             return null;
         }
         try {
-            return CameraResultType.valueOf(resultType.toUpperCase(Locale.ROOT));
+            return CameraResultType.valueOf(resultType.toUpperCase());
         } catch (IllegalArgumentException ex) {
             Logger.debug(getLogTag(), "Invalid result type \"" + resultType + "\", defaulting to base64");
             return CameraResultType.BASE64;
@@ -280,25 +250,10 @@ public class CameraPlugin extends Plugin {
     }
 
     public void openPhotos(final PluginCall call) {
-        openPhotos(call, false, false);
-    }
-
-    private void openPhotos(final PluginCall call, boolean multiple, boolean skipPermission) {
-        if (skipPermission || checkPhotosPermissions(call)) {
+        if (checkPhotosPermissions(call)) {
             Intent intent = new Intent(Intent.ACTION_PICK);
-            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, multiple);
             intent.setType("image/*");
-            try {
-                if (multiple) {
-                    intent.putExtra("multi-pick", multiple);
-                    intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[] { "image/*" });
-                    startActivityForResult(call, intent, "processPickedImages");
-                } else {
-                    startActivityForResult(call, intent, "processPickedImage");
-                }
-            } catch (ActivityNotFoundException ex) {
-                call.reject(NO_PHOTO_ACTIVITY_ERROR);
-            }
+            startActivityForResult(call, intent, "processPickedImage");
         }
     }
 
@@ -339,69 +294,6 @@ public class CameraPlugin extends Plugin {
         processPickedImage(u, call);
     }
 
-    @ActivityCallback
-    public void processPickedImages(PluginCall call, ActivityResult result) {
-        Intent data = result.getData();
-        if (data != null) {
-            Executor executor = Executors.newSingleThreadExecutor();
-            executor.execute(
-                () -> {
-                    JSObject ret = new JSObject();
-                    JSArray photos = new JSArray();
-                    if (data.getClipData() != null) {
-                        int count = data.getClipData().getItemCount();
-                        for (int i = 0; i < count; i++) {
-                            Uri imageUri = data.getClipData().getItemAt(i).getUri();
-                            JSObject processResult = processPickedImages(imageUri);
-                            if (processResult.getString("error") != null && !processResult.getString("error").isEmpty()) {
-                                call.reject(processResult.getString("error"));
-                                return;
-                            } else {
-                                photos.put(processResult);
-                            }
-                        }
-                    } else if (data.getData() != null) {
-                        Uri imageUri = data.getData();
-                        JSObject processResult = processPickedImages(imageUri);
-                        if (processResult.getString("error") != null && !processResult.getString("error").isEmpty()) {
-                            call.reject(processResult.getString("error"));
-                            return;
-                        } else {
-                            photos.put(processResult);
-                        }
-                    } else if (data.getExtras() != null) {
-                        Bundle bundle = data.getExtras();
-                        if (bundle.keySet().contains("selectedItems")) {
-                            ArrayList<Parcelable> fileUris = bundle.getParcelableArrayList("selectedItems");
-                            if (fileUris != null) {
-                                for (Parcelable fileUri : fileUris) {
-                                    if (fileUri instanceof Uri) {
-                                        Uri imageUri = (Uri) fileUri;
-                                        try {
-                                            JSObject processResult = processPickedImages(imageUri);
-                                            if (processResult.getString("error") != null && !processResult.getString("error").isEmpty()) {
-                                                call.reject(processResult.getString("error"));
-                                                return;
-                                            } else {
-                                                photos.put(processResult);
-                                            }
-                                        } catch (SecurityException ex) {
-                                            call.reject("SecurityException");
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    ret.put("photos", photos);
-                    call.resolve(ret);
-                }
-            );
-        } else {
-            call.reject("No images picked");
-        }
-    }
-
     private void processPickedImage(Uri imageUri, PluginCall call) {
         InputStream imageStream = null;
 
@@ -428,57 +320,6 @@ public class CameraPlugin extends Plugin {
                 }
             }
         }
-    }
-
-    private JSObject processPickedImages(Uri imageUri) {
-        InputStream imageStream = null;
-        JSObject ret = new JSObject();
-        try {
-            imageStream = getContext().getContentResolver().openInputStream(imageUri);
-            Bitmap bitmap = BitmapFactory.decodeStream(imageStream);
-
-            if (bitmap == null) {
-                ret.put("error", "Unable to process bitmap");
-                return ret;
-            }
-
-            ExifWrapper exif = ImageUtils.getExifData(getContext(), bitmap, imageUri);
-            try {
-                bitmap = prepareBitmap(bitmap, imageUri, exif);
-            } catch (IOException e) {
-                ret.put("error", UNABLE_TO_PROCESS_IMAGE);
-                return ret;
-            }
-            // Compress the final image and prepare for output to client
-            ByteArrayOutputStream bitmapOutputStream = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.JPEG, settings.getQuality(), bitmapOutputStream);
-
-            Uri newUri = getTempImage(imageUri, bitmapOutputStream);
-            exif.copyExif(newUri.getPath());
-            if (newUri != null) {
-                ret.put("format", "jpeg");
-                ret.put("exif", exif.toJson());
-                ret.put("path", newUri.toString());
-                ret.put("webPath", FileUtils.getPortablePath(getContext(), bridge.getLocalUrl(), newUri));
-            } else {
-                ret.put("error", UNABLE_TO_PROCESS_IMAGE);
-            }
-            return ret;
-        } catch (OutOfMemoryError err) {
-            ret.put("error", "Out of memory");
-        } catch (FileNotFoundException ex) {
-            ret.put("error", "No such image found");
-            Logger.error(getLogTag(), "No such image found", ex);
-        } finally {
-            if (imageStream != null) {
-                try {
-                    imageStream.close();
-                } catch (IOException e) {
-                    Logger.error(getLogTag(), UNABLE_TO_PROCESS_IMAGE, e);
-                }
-            }
-        }
-        return ret;
     }
 
     @ActivityCallback
@@ -509,21 +350,15 @@ public class CameraPlugin extends Plugin {
     private Uri saveImage(Uri uri, InputStream is) throws IOException {
         File outFile = null;
         if (uri.getScheme().equals("content")) {
-            outFile = getTempFile(uri);
+            String filename = Uri.parse(Uri.decode(uri.toString())).getLastPathSegment();
+            if (!filename.contains(".jpg") && !filename.contains(".jpeg")) {
+                filename += "." + (new java.util.Date()).getTime() + ".jpeg";
+            }
+            File cacheDir = getContext().getCacheDir();
+            outFile = new File(cacheDir, filename);
         } else {
             outFile = new File(uri.getPath());
         }
-        try {
-            writePhoto(outFile, is);
-        } catch (FileNotFoundException ex) {
-            // Some gallery apps return read only file url, create a temporary file for modifications
-            outFile = getTempFile(uri);
-            writePhoto(outFile, is);
-        }
-        return Uri.fromFile(outFile);
-    }
-
-    private void writePhoto(File outFile, InputStream is) throws IOException {
         FileOutputStream fos = new FileOutputStream(outFile);
         byte[] buffer = new byte[1024];
         int len;
@@ -531,15 +366,7 @@ public class CameraPlugin extends Plugin {
             fos.write(buffer, 0, len);
         }
         fos.close();
-    }
-
-    private File getTempFile(Uri uri) {
-        String filename = Uri.parse(Uri.decode(uri.toString())).getLastPathSegment();
-        if (!filename.contains(".jpg") && !filename.contains(".jpeg")) {
-            filename += "." + (new java.util.Date()).getTime() + ".jpeg";
-        }
-        File cacheDir = getContext().getCacheDir();
-        return new File(cacheDir, filename);
+        return Uri.fromFile(outFile);
     }
 
     /**
@@ -548,7 +375,6 @@ public class CameraPlugin extends Plugin {
      * @param bitmap
      * @param u
      */
-    @SuppressWarnings("deprecation")
     private void returnResult(PluginCall call, Bitmap bitmap, Uri u) {
         ExifWrapper exif = ImageUtils.getExifData(getContext(), bitmap, u);
         try {
@@ -572,47 +398,16 @@ public class CameraPlugin extends Plugin {
             try {
                 String fileToSavePath = imageEditedFileSavePath != null ? imageEditedFileSavePath : imageFileSavePath;
                 File fileToSave = new File(fileToSavePath);
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    ContentResolver resolver = getContext().getContentResolver();
-                    ContentValues values = new ContentValues();
-                    values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileToSave.getName());
-                    values.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
-                    values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DCIM);
-
-                    final Uri contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
-                    Uri uri = resolver.insert(contentUri, values);
-
-                    if (uri == null) {
-                        throw new IOException("Failed to create new MediaStore record.");
-                    }
-
-                    OutputStream stream = resolver.openOutputStream(uri);
-                    if (stream == null) {
-                        throw new IOException("Failed to open output stream.");
-                    }
-
-                    Boolean inserted = bitmap.compress(Bitmap.CompressFormat.JPEG, settings.getQuality(), stream);
-
-                    if (!inserted) {
-                        isSaved = false;
-                    }
-                } else {
-                    String inserted = MediaStore.Images.Media.insertImage(
-                        getContext().getContentResolver(),
-                        fileToSavePath,
-                        fileToSave.getName(),
-                        ""
-                    );
-
-                    if (inserted == null) {
-                        isSaved = false;
-                    }
+                String inserted = MediaStore.Images.Media.insertImage(
+                    getContext().getContentResolver(),
+                    fileToSavePath,
+                    fileToSave.getName(),
+                    ""
+                );
+                if (inserted == null) {
+                    isSaved = false;
                 }
             } catch (FileNotFoundException e) {
-                isSaved = false;
-                Logger.error(getLogTag(), IMAGE_GALLERY_SAVE_ERROR, e);
-            } catch (IOException e) {
                 isSaved = false;
                 Logger.error(getLogTag(), IMAGE_GALLERY_SAVE_ERROR, e);
             }

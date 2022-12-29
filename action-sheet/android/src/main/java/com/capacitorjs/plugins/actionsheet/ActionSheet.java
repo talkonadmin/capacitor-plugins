@@ -86,13 +86,11 @@ public class ActionSheet extends BottomSheetDialogFragment {
         LinearLayout layout = new LinearLayout(getContext());
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(layoutPaddingPx16, layoutPaddingPx16, layoutPaddingPx16, layoutPaddingPx16);
-        if (title != null) {
-            TextView ttv = new TextView(getContext());
-            ttv.setTextColor(Color.parseColor("#757575"));
-            ttv.setPadding(layoutPaddingPx8, layoutPaddingPx8, layoutPaddingPx8, layoutPaddingPx8);
-            ttv.setText(title);
-            layout.addView(ttv);
-        }
+        TextView ttv = new TextView(getContext());
+        ttv.setTextColor(Color.parseColor("#757575"));
+        ttv.setPadding(layoutPaddingPx8, layoutPaddingPx8, layoutPaddingPx8, layoutPaddingPx8);
+        ttv.setText(title);
+        layout.addView(ttv);
 
         for (int i = 0; i < options.length; i++) {
             final int optionIndex = i;

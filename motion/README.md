@@ -16,11 +16,7 @@ permission before using this API. To request permission, prompt the user for
 permission on any user-initiated action (such as a button click):
 
 ```typescript
-import { PluginListenerHandle } from '@capacitor/core';
 import { Motion } from '@capacitor/motion';
-
-
-let accelHandler: PluginListenerHandle;
 
 myButton.addEventListener('click', async () => {
   try {
@@ -31,22 +27,10 @@ myButton.addEventListener('click', async () => {
   }
 
   // Once the user approves, can start listening:
-  accelHandler = await Motion.addListener('accel', event => {
+  Motion.addListener('accel', event => {
     console.log('Device motion event:', event);
   });
 });
-
-// Stop the acceleration listener
-const stopAcceleration = () => {
-  if (accelHandler) {
-    accelHandler.remove();
-  }
-};
-
-// Remove all listeners
-const removeListeners = () => {
-  Motion.removeAllListeners();
-};
 ```
 
 See the
@@ -57,8 +41,8 @@ API to understand the data supplied in the 'accel' event.
 
 <docgen-index>
 
-* [`addListener('accel', ...)`](#addlisteneraccel)
-* [`addListener('orientation', ...)`](#addlistenerorientation)
+* [`addListener('accel', ...)`](#addlisteneraccel-)
+* [`addListener('orientation', ...)`](#addlistenerorientation-)
 * [`removeAllListeners()`](#removealllisteners)
 * [Interfaces](#interfaces)
 * [Type Aliases](#type-aliases)

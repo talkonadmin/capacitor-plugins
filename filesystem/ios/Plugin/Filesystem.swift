@@ -103,15 +103,6 @@ import Foundation
         return try FileManager.default.attributesOfItem(atPath: fileUrl.path)
     }
 
-    func getType(from attr: [FileAttributeKey: Any]) -> String {
-        let fileType = attr[.type] as? String ?? ""
-        if fileType == "NSFileTypeDirectory" {
-            return "directory"
-        } else {
-            return "file"
-        }
-    }
-
     @objc public func rename(at srcURL: URL, to dstURL: URL) throws {
         try _copy(at: srcURL, to: dstURL, doRename: true)
     }
@@ -150,8 +141,6 @@ import Foundation
             switch directory {
             case "CACHE":
                 return .cachesDirectory
-            case "LIBRARY":
-                return .libraryDirectory
             default:
                 return .documentDirectory
             }
@@ -168,10 +157,8 @@ import Foundation
             guard let dir = FileManager.default.urls(for: directory, in: .userDomainMask).first else {
                 return nil
             }
-            if !path.isEmpty {
-                return dir.appendingPathComponent(path)
-            }
-            return dir
+
+            return dir.appendingPathComponent(path)
         } else {
             return URL(string: path)
         }

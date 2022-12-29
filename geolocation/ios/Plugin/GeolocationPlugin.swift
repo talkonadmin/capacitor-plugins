@@ -168,8 +168,7 @@ public class GeolocationPlugin: CAPPlugin, CLLocationManagerDelegate {
         }
 
         let result = [
-            "location": status,
-            "coarseLocation": status
+            "location": status
         ]
 
         call.resolve(result)

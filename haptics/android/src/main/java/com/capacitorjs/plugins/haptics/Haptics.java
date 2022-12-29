@@ -4,7 +4,6 @@ import android.content.Context;
 import android.os.Build;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
-import android.os.VibratorManager;
 import com.capacitorjs.plugins.haptics.arguments.HapticsSelectionType;
 import com.capacitorjs.plugins.haptics.arguments.HapticsVibrationType;
 
@@ -16,21 +15,11 @@ public class Haptics {
 
     Haptics(Context context) {
         this.context = context;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            VibratorManager vibratorManager = (VibratorManager) context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE);
-            this.vibrator = vibratorManager.getDefaultVibrator();
-        } else {
-            this.vibrator = getDeprecatedVibrator(context);
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    private Vibrator getDeprecatedVibrator(Context context) {
-        return (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+        this.vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
     }
 
     public void vibrate(int duration) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= 26) {
             vibrator.vibrate(VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE));
         } else {
             vibratePre26(duration);
@@ -62,7 +51,7 @@ public class Haptics {
     }
 
     public void performHaptics(HapticsVibrationType type) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= 26) {
             vibrator.vibrate(VibrationEffect.createWaveform(type.getTimings(), type.getAmplitudes(), -1));
         } else {
             vibratePre26(type.getOldSDKPattern(), -1);

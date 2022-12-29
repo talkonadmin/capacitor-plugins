@@ -188,29 +188,11 @@ public class FilesystemPlugin: CAPPlugin {
 
         do {
             let directoryContents = try implementation.readdir(at: fileUrl)
-            let directoryContent = try directoryContents.map {(url: URL) -> [String: Any] in
-                let attr = try implementation.stat(at: url)
-                var ctime = ""
-                var mtime = ""
-
-                if let ctimeSeconds = (attr[.creationDate] as? Date)?.timeIntervalSince1970 {
-                    ctime = String(format: "%.0f", ctimeSeconds * 1000)
-                }
-
-                if let mtimeSeconds = (attr[.modificationDate] as? Date)?.timeIntervalSince1970 {
-                    mtime = String(format: "%.0f", mtimeSeconds * 1000)
-                }
-                return [
-                    "name": url.lastPathComponent,
-                    "type": implementation.getType(from: attr),
-                    "size": attr[.size] as? UInt64 ?? 0,
-                    "ctime": ctime,
-                    "mtime": mtime,
-                    "uri": url.absoluteString
-                ]
+            let directoryPathStrings = directoryContents.map {(url: URL) -> String in
+                return url.lastPathComponent
             }
             call.resolve([
-                "files": directoryContent
+                "files": directoryPathStrings
             ])
         } catch {
             handleError(call, error.localizedDescription, error)
@@ -244,8 +226,8 @@ public class FilesystemPlugin: CAPPlugin {
             }
 
             call.resolve([
-                "type": implementation.getType(from: attr),
-                "size": attr[.size] as? UInt64 ?? 0,
+                "type": attr[.type] as? String ?? "",
+                "size": attr[.size] as? UInt64 ?? "",
                 "ctime": ctime,
                 "mtime": mtime,
                 "uri": fileUrl.absoluteString
@@ -325,9 +307,7 @@ public class FilesystemPlugin: CAPPlugin {
         }
         do {
             try implementation.copy(at: fromUrl, to: toUrl)
-            call.resolve([
-                "uri": toUrl.absoluteString
-            ])
+            call.resolve()
         } catch let error as NSError {
             handleError(call, error.localizedDescription, error)
         }

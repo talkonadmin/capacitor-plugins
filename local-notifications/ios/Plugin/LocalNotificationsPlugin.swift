@@ -23,7 +23,6 @@ enum LocalNotificationError: LocalizedError {
     }
 }
 
-// swiftlint:disable type_body_length
 @objc(LocalNotificationsPlugin)
 public class LocalNotificationsPlugin: CAPPlugin {
     private let notificationDelegationHandler = LocalNotificationsHandler()
@@ -228,7 +227,7 @@ public class LocalNotificationsPlugin: CAPPlugin {
             content.threadIdentifier = threadIdentifier
         }
 
-        if let summaryArgument = notification["summaryArgument"] as? String {
+        if #available(iOS 12, *), let summaryArgument = notification["summaryArgument"] as? String {
             content.summaryArgument = summaryArgument
         }
 
@@ -310,6 +309,9 @@ public class LocalNotificationsPlugin: CAPPlugin {
         if let day = at["day"] as? Int {
             dateInfo.day = day
         }
+        if let weekday = at["weekday"] as? Int {
+            dateInfo.weekday = weekday
+        }
         if let hour = at["hour"] as? Int {
             dateInfo.hour = hour
         }
@@ -318,9 +320,6 @@ public class LocalNotificationsPlugin: CAPPlugin {
         }
         if let second = at["second"] as? Int {
             dateInfo.second = second
-        }
-        if let weekday = at["weekday"] as? Int {
-            dateInfo.weekday = weekday
         }
         return dateInfo
     }
@@ -548,45 +547,6 @@ public class LocalNotificationsPlugin: CAPPlugin {
             opts[UNNotificationAttachmentOptionsThumbnailTimeKey] = iosUNNotificationAttachmentOptionsThumbnailTimeKey
         }
         return opts
-    }
-
-    /**
-     * Get notifications in Notification Center
-     */
-    @objc func getDeliveredNotifications(_ call: CAPPluginCall) {
-        UNUserNotificationCenter.current().getDeliveredNotifications(completionHandler: { (notifications) in
-            let ret = notifications.map({ (notification) -> [String: Any] in
-                return self.notificationDelegationHandler.makeNotificationRequestJSObject(notification.request)
-            })
-            call.resolve([
-                "notifications": ret
-            ])
-        })
-    }
-
-    /**
-     * Remove specified notifications from Notification Center
-     */
-    @objc func removeDeliveredNotifications(_ call: CAPPluginCall) {
-        guard let notifications = call.getArray("notifications", JSObject.self) else {
-            call.reject("Must supply notifications to remove")
-            return
-        }
-
-        let ids = notifications.map { "\($0["id"] ?? "")" }
-        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ids)
-        call.resolve()
-    }
-
-    /**
-     * Remove all notifications from Notification Center
-     */
-    @objc func removeAllDeliveredNotifications(_ call: CAPPluginCall) {
-        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
-        DispatchQueue.main.async(execute: {
-            UIApplication.shared.applicationIconBadgeNumber = 0
-        })
-        call.resolve()
     }
 
     @objc func createChannel(_ call: CAPPluginCall) {

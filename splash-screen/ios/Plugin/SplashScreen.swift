@@ -89,7 +89,7 @@ import Capacitor
 
     private func buildViews() {
         let storyboardName = Bundle.main.infoDictionary?["UILaunchStoryboardName"] as? String ?? "LaunchScreen"
-        if let vc = UIStoryboard(name: storyboardName.replacingOccurrences(of: ".storyboard", with: ""), bundle: nil).instantiateInitialViewController() {
+        if let vc = UIStoryboard(name: storyboardName, bundle: nil).instantiateInitialViewController() {
             viewController = vc
         }
 
@@ -117,21 +117,16 @@ import Capacitor
     // Update the bounds for the splash image. This will also be called when
     // the parent view observers fire
     private func updateSplashImageBounds() {
-        var window: UIWindow? = UIApplication.shared.delegate?.window ?? nil
-
-        if window == nil {
-            let scene: UIWindowScene? = UIApplication.shared.connectedScenes.first as? UIWindowScene
-            window = scene?.windows.filter({$0.isKeyWindow}).first
-            if window == nil {
-                window = scene?.windows.first
-            }
-        }
-
-        if let unwrappedWindow = window {
-            viewController.view.frame = CGRect(origin: CGPoint(x: 0, y: 0), size: unwrappedWindow.bounds.size)
-        } else {
+        guard let delegate = UIApplication.shared.delegate else {
             CAPLog.print("Unable to find root window object for SplashScreen bounds. Please file an issue")
+            return
         }
+
+        guard let window = delegate.window as? UIWindow else {
+            CAPLog.print("Unable to find root window object for SplashScreen bounds. Please file an issue")
+            return
+        }
+        viewController.view.frame = CGRect(origin: CGPoint(x: 0, y: 0), size: window.bounds.size)
     }
 
     override public func observeValue(forKeyPath keyPath: String?, of object: Any?, change _: [NSKeyValueChangeKey: Any]?, context: UnsafeMutableRawPointer?) {

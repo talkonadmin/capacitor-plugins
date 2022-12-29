@@ -7,7 +7,6 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.util.WebColor;
-import java.util.Locale;
 
 @CapacitorPlugin(name = "SplashScreen")
 public class SplashScreenPlugin extends Plugin {
@@ -18,11 +17,7 @@ public class SplashScreenPlugin extends Plugin {
     public void load() {
         config = getSplashScreenConfig();
         splashScreen = new SplashScreen(getContext(), config);
-        if (!bridge.isMinimumWebViewInstalled() && bridge.getConfig().getErrorPath() != null && !config.isLaunchAutoHide()) {
-            return;
-        } else {
-            splashScreen.showOnLaunch(getActivity());
-        }
+        splashScreen.showOnLaunch(getActivity());
     }
 
     @PluginMethod
@@ -108,7 +103,7 @@ public class SplashScreenPlugin extends Plugin {
         if (spinnerStyle != null) {
             int spinnerBarStyle = android.R.attr.progressBarStyleLarge;
 
-            switch (spinnerStyle.toLowerCase(Locale.ROOT)) {
+            switch (spinnerStyle.toLowerCase()) {
                 case "horizontal":
                     spinnerBarStyle = android.R.attr.progressBarStyleHorizontal;
                     break;

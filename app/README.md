@@ -63,7 +63,7 @@ App.addListener('appRestoredResult', data => {
 const checkAppLaunchUrl = async () => {
   const { url } = await App.getLaunchUrl();
 
-  console.log('App opened with URL: ' + url);
+  alert('App opened with URL: ' + url);
 };
 ```
 
@@ -75,13 +75,10 @@ const checkAppLaunchUrl = async () => {
 * [`getInfo()`](#getinfo)
 * [`getState()`](#getstate)
 * [`getLaunchUrl()`](#getlaunchurl)
-* [`minimizeApp()`](#minimizeapp)
-* [`addListener('appStateChange', ...)`](#addlistenerappstatechange)
-* [`addListener('pause', ...)`](#addlistenerpause)
-* [`addListener('resume', ...)`](#addlistenerresume)
-* [`addListener('appUrlOpen', ...)`](#addlistenerappurlopen)
-* [`addListener('appRestoredResult', ...)`](#addlistenerapprestoredresult)
-* [`addListener('backButton', ...)`](#addlistenerbackbutton)
+* [`addListener('appStateChange', ...)`](#addlistenerappstatechange-)
+* [`addListener('appUrlOpen', ...)`](#addlistenerappurlopen-)
+* [`addListener('appRestoredResult', ...)`](#addlistenerapprestoredresult-)
+* [`addListener('backButton', ...)`](#addlistenerbackbutton-)
 * [`removeAllListeners()`](#removealllisteners)
 * [Interfaces](#interfaces)
 * [Type Aliases](#type-aliases)
@@ -94,13 +91,15 @@ const checkAppLaunchUrl = async () => {
 ### exitApp()
 
 ```typescript
-exitApp() => Promise<void>
+exitApp() => never
 ```
 
 Force exit the app. This should only be used in conjunction with the `backButton` handler for Android to
 exit the app when navigation is complete.
 
 Ionic handles this itself so you shouldn't need to call this if using Ionic.
+
+**Returns:** <code>never</code>
 
 **Since:** 1.0.0
 
@@ -152,33 +151,13 @@ Get the URL the app was launched with, if any.
 --------------------
 
 
-### minimizeApp()
-
-```typescript
-minimizeApp() => Promise<void>
-```
-
-Minimizes the application.
-
-Only available for Android.
-
-**Since:** 1.1.0
-
---------------------
-
-
 ### addListener('appStateChange', ...)
 
 ```typescript
 addListener(eventName: 'appStateChange', listenerFunc: StateChangeListener) => Promise<PluginListenerHandle> & PluginListenerHandle
 ```
 
-Listen for changes in the app or the activity states.
-
-On iOS it's fired when the native [UIApplication.willResignActiveNotification](https://developer.apple.com/documentation/uikit/uiapplication/1622973-willresignactivenotification) and
-[UIApplication.didBecomeActiveNotification](https://developer.apple.com/documentation/uikit/uiapplication/1622953-didbecomeactivenotification) events get fired.
-On Android it's fired when the Capacitor's Activity [onResume](https://developer.android.com/reference/android/app/Activity#onResume()) and [onStop](https://developer.android.com/reference/android/app/Activity#onStop()) methods gets called.
-On Web it's fired when the document's visibilitychange gets fired.
+Listen for changes in the App's active state (whether the app is in the foreground or background)
 
 | Param              | Type                                                                |
 | ------------------ | ------------------------------------------------------------------- |
@@ -188,55 +167,6 @@ On Web it's fired when the document's visibilitychange gets fired.
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
 
 **Since:** 1.0.0
-
---------------------
-
-
-### addListener('pause', ...)
-
-```typescript
-addListener(eventName: 'pause', listenerFunc: () => void) => Promise<PluginListenerHandle> & PluginListenerHandle
-```
-
-Listen for when the app or the activity are paused.
-
-On iOS it's fired when the native [UIApplication.didEnterBackgroundNotification](https://developer.apple.com/documentation/uikit/uiapplication/1623071-didenterbackgroundnotification) event gets fired.
-On Android it's fired when the Capacitor's Activity [onPause](https://developer.android.com/reference/android/app/Activity#onPause()) method gets called.
-On Web it's fired when the document's visibilitychange gets fired and document.hidden is true.
-
-| Param              | Type                       |
-| ------------------ | -------------------------- |
-| **`eventName`**    | <code>'pause'</code>       |
-| **`listenerFunc`** | <code>() =&gt; void</code> |
-
-**Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
-
-**Since:** 4.1.0
-
---------------------
-
-
-### addListener('resume', ...)
-
-```typescript
-addListener(eventName: 'resume', listenerFunc: () => void) => Promise<PluginListenerHandle> & PluginListenerHandle
-```
-
-Listen for when the app or activity are resumed.
-
-On iOS it's fired when the native [UIApplication.willEnterForegroundNotification](https://developer.apple.com/documentation/uikit/uiapplication/1622944-willenterforegroundnotification) event gets fired.
-On Android it's fired when the Capacitor's Activity [onResume](https://developer.android.com/reference/android/app/Activity#onResume()) method gets called,
-but only after resume has fired first.
-On Web it's fired when the document's visibilitychange gets fired and document.hidden is false.
-
-| Param              | Type                       |
-| ------------------ | -------------------------- |
-| **`eventName`**    | <code>'resume'</code>      |
-| **`listenerFunc`** | <code>() =&gt; void</code> |
-
-**Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
-
-**Since:** 4.1.0
 
 --------------------
 

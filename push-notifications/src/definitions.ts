@@ -7,7 +7,7 @@ export type PresentationOption = 'badge' | 'sound' | 'alert';
 declare module '@capacitor/cli' {
   export interface PluginsConfig {
     /**
-     * You can configure the way the push notifications are displayed when the app is in foreground.
+     * On iOS you can configure the way the push notifications are displayed when the app is in foreground.
      */
     PushNotifications?: {
       /**
@@ -18,7 +18,7 @@ declare module '@capacitor/cli' {
        *
        * An empty array can be provided if none of the options are desired.
        *
-       * badge is only available for iOS.
+       * Only available for iOS.
        *
        * @since 1.0.0
        * @example ["badge", "sound", "alert"]
@@ -79,7 +79,7 @@ export interface PushNotificationsPlugin {
    *
    * @since 1.0.0
    */
-  deleteChannel(args: { id: string }): Promise<void>;
+  deleteChannel(channel: Channel): Promise<void>;
 
   /**
    * List the available notification channels.
@@ -109,7 +109,7 @@ export interface PushNotificationsPlugin {
    *
    * On iOS, the first time you use the function, it will prompt the user
    * for push notification permission and return granted or denied based
-   * on the user selection. On following calls it will get the current status of
+   * on the user selection. On following calls it will currect status of
    * the permission without prompting again.
    *
    * @since 1.0.0
@@ -137,7 +137,7 @@ export interface PushNotificationsPlugin {
    */
   addListener(
     eventName: 'registrationError',
-    listenerFunc: (error: RegistrationError) => void,
+    listenerFunc: (error: any) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
 
   /**
@@ -196,15 +196,6 @@ export interface PushNotificationSchema {
    * @since 1.0.0
    */
   id: string;
-
-  /**
-   * The notification tag.
-   *
-   * Only available on Android (from push notifications).
-   *
-   * @since 4.0.0
-   */
-  tag?: string;
 
   /**
    * The number to display for the app icon badge.
@@ -301,15 +292,6 @@ export interface Token {
   value: string;
 }
 
-export interface RegistrationError {
-  /**
-   * Error message describing the registration failure.
-   *
-   * @since 4.0.0
-   */
-  error: string;
-}
-
 export interface DeliveredNotifications {
   /**
    * List of notifications that are visible on the
@@ -359,10 +341,9 @@ export interface Channel {
   /**
    * The level of interruption for notifications posted to this channel.
    *
-   * @default `3`
    * @since 1.0.0
    */
-  importance?: Importance;
+  importance: Importance;
 
   /**
    * The visibility of notifications posted to this channel.

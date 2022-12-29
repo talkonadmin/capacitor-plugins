@@ -50,11 +50,11 @@ public class DateMatch {
     }
 
     public Integer getWeekday() {
-        return weekday;
+      return weekday;
     }
 
     public void setWeekday(Integer weekday) {
-        this.weekday = weekday;
+      this.weekday = weekday;
     }
 
     public Integer getHour() {
@@ -222,21 +222,14 @@ public class DateMatch {
      */
     public String toMatchString() {
         String matchString =
-            year +
-            separator +
-            month +
-            separator +
-            day +
-            separator +
-            weekday +
-            separator +
-            hour +
-            separator +
-            minute +
-            separator +
-            second +
-            separator +
-            unit;
+            year + separator 
+            + month + separator 
+            + day + separator 
+            + weekday + separator 
+            + hour + separator 
+            + minute + separator 
+            + second + separator 
+            + unit;
         return matchString.replace("null", "*");
     }
 
@@ -249,6 +242,7 @@ public class DateMatch {
     public static DateMatch fromMatchString(String matchString) {
         DateMatch date = new DateMatch();
         String[] split = matchString.split(separator);
+
         if (split != null && split.length == 7) {
             date.setYear(getValueFromCronElement(split[0]));
             date.setMonth(getValueFromCronElement(split[1]));
