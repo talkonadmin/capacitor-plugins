@@ -4,6 +4,8 @@ import android.Manifest;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
+import android.content.Intent;
+import androidx.activity.result.ActivityResult;
 import com.capacitorjs.plugins.filesystem.exceptions.CopyFailedException;
 import com.capacitorjs.plugins.filesystem.exceptions.DirectoryExistsException;
 import com.capacitorjs.plugins.filesystem.exceptions.DirectoryNotFoundException;
@@ -14,6 +16,7 @@ import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
@@ -21,6 +24,8 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Base64;
+
 import org.json.JSONException;
 
 @CapacitorPlugin(
@@ -42,6 +47,47 @@ public class FilesystemPlugin extends Plugin {
     }
 
     private static final String PERMISSION_DENIED_ERROR = "Unable to do file operation, user denied permission request";
+
+    @PluginMethod
+    public void selectDirectoryForPdfFile(PluginCall call) {
+      String fileName = call.getString("fileName", "file.pdf");
+      Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+      intent.addCategory(Intent.CATEGORY_OPENABLE);
+      intent.setType("application/pdf");
+      intent.putExtra(Intent.EXTRA_TITLE, fileName);
+      startActivityForResult(call, intent, "selectDirectoryResult");
+    }
+
+    @ActivityCallback
+    private void selectDirectoryResult(PluginCall call, ActivityResult result) {
+      if (call == null) {
+        return;
+      }
+      JSObject ret = new JSObject();
+      ret.put("uri", result.getData().getData().toString());
+      call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void writePdfFile(PluginCall call) {
+        String fileUri = call.getString("fileUri");
+        String fileData = call.getString("fileData");
+        try {
+            BufferedOutputStream bos = new BufferedOutputStream(getContext().getContentResolver().openOutputStream(Uri.parse(fileUri)));
+            if (fileData.contains(",")) {
+                fileData = fileData.split(",")[1];
+            }
+            bos.write(Base64.getDecoder().decode(fileData));
+            bos.close();
+        } catch (IOException ex) {
+            Logger.error(
+                getLogTag(),
+                "Write pdf file '" +fileUri + "' failed. Error: " + ex.getMessage(),
+                ex
+            );
+            call.reject("FILE_NOTCREATED");
+        }
+    }
 
     @PluginMethod
     public void readFile(PluginCall call) {
@@ -119,7 +165,7 @@ public class FilesystemPlugin extends Plugin {
         } else {
             // check file:// or no scheme uris
             Uri u = Uri.parse(path);
-            if (u.getScheme() == null || u.getScheme().equals("file")) {
+            if (u.getScheme() == null || u.getScheme().equals("file") || u.getScheme().equals("content")) {
                 File fileObject = new File(u.getPath());
                 // do not know where the file is being store so checking the permission to be secure
                 // TODO to prevent permission checking we need a property from the call

@@ -92,6 +92,15 @@ export enum Encoding {
   UTF16 = 'utf16',
 }
 
+export interface SelectDirectoryForPdfFileOptions {
+  fileName: string;
+}
+
+export interface WritePdfFileOptions {
+  fileUri: string;
+  fileData: string;
+}
+
 export interface WriteFileOptions {
   /**
    * The path of the file to write
@@ -337,6 +346,10 @@ export interface CopyOptions {
 
 export type RenameOptions = CopyOptions;
 
+export interface SelectDirectoryForPdfFileResult {
+  uri: string;
+}
+
 export interface ReadFileResult {
   /**
    * The string representation of the data contained in the file
@@ -413,6 +426,10 @@ export interface StatResult {
 }
 
 export interface FilesystemPlugin {
+  selectDirectoryForPdfFile(options: SelectDirectoryForPdfFileOptions): Promise<SelectDirectoryForPdfFileResult>;
+
+  writePdfFile(options: WritePdfFileOptions): Promise<void>;
+
   /**
    * Read a file from disk
    *

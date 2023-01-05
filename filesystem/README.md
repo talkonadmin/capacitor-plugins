@@ -77,6 +77,8 @@ const readFilePath = async () => {
 
 <docgen-index>
 
+* [`selectDirectoryForPdfFile(...)`](#selectdirectoryforpdffile)
+* [`writePdfFile(...)`](#writepdffile)
 * [`readFile(...)`](#readfile)
 * [`writeFile(...)`](#writefile)
 * [`appendFile(...)`](#appendfile)
@@ -98,6 +100,34 @@ const readFilePath = async () => {
 
 <docgen-api>
 <!--Update the source file JSDoc comments and rerun docgen to update the docs below-->
+
+### selectDirectoryForPdfFile(...)
+
+```typescript
+selectDirectoryForPdfFile(options: SelectDirectoryForPdfFileOptions) => Promise<SelectDirectoryForPdfFileResult>
+```
+
+| Param         | Type                                                                                          |
+| ------------- | --------------------------------------------------------------------------------------------- |
+| **`options`** | <code><a href="#selectdirectoryforpdffileoptions">SelectDirectoryForPdfFileOptions</a></code> |
+
+**Returns:** <code>Promise&lt;<a href="#selectdirectoryforpdffileresult">SelectDirectoryForPdfFileResult</a>&gt;</code>
+
+--------------------
+
+
+### writePdfFile(...)
+
+```typescript
+writePdfFile(options: WritePdfFileOptions) => Promise<void>
+```
+
+| Param         | Type                                                                |
+| ------------- | ------------------------------------------------------------------- |
+| **`options`** | <code><a href="#writepdffileoptions">WritePdfFileOptions</a></code> |
+
+--------------------
+
 
 ### readFile(...)
 
@@ -331,6 +361,28 @@ Required on Android, only when using <a href="#directory">`Directory.Documents`<
 
 
 ### Interfaces
+
+
+#### SelectDirectoryForPdfFileResult
+
+| Prop      | Type                |
+| --------- | ------------------- |
+| **`uri`** | <code>string</code> |
+
+
+#### SelectDirectoryForPdfFileOptions
+
+| Prop           | Type                |
+| -------------- | ------------------- |
+| **`fileName`** | <code>string</code> |
+
+
+#### WritePdfFileOptions
+
+| Prop           | Type                |
+| -------------- | ------------------- |
+| **`fileUri`**  | <code>string</code> |
+| **`fileData`** | <code>string</code> |
 
 
 #### ReadFileResult

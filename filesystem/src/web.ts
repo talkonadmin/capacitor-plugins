@@ -18,6 +18,9 @@ import type {
   StatOptions,
   StatResult,
   WriteFileOptions,
+  SelectDirectoryForPdfFileOptions,
+  SelectDirectoryForPdfFileResult,
+  WritePdfFileOptions,
   WriteFileResult,
   Directory,
 } from './definitions';
@@ -161,6 +164,17 @@ export class FilesystemWeb extends WebPlugin implements FilesystemPlugin {
     const entry = (await this.dbRequest('get', [path])) as EntryObj;
     if (entry === undefined) throw Error('File does not exist.');
     return { data: entry.content ? entry.content : '' };
+  }
+
+  async selectDirectoryForPdfFile(options: SelectDirectoryForPdfFileOptions): Promise<SelectDirectoryForPdfFileResult> {
+    console.log(options.fileName)
+    return {
+      uri: ''
+    };
+  }
+
+  async writePdfFile(options: WritePdfFileOptions): Promise<void> {
+    console.log(options.fileUri)
   }
 
   /**
