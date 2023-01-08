@@ -1,14 +1,16 @@
 import Foundation
+import UIKit
 import Capacitor
+import UniformTypeIdentifiers
 
 /**
  * Please read the Capacitor iOS Plugin Development Guide
  * here: https://capacitorjs.com/docs/plugins/ios
  */
-@objc(FilesystemPlugin)
-public class FilesystemPlugin: CAPPlugin {
-    private let implementation = Filesystem()
 
+@objc(FilesystemPlugin)
+public class FilesystemPlugin: CAPPlugin, UIDocumentPickerDelegate {
+    private let implementation = Filesystem()
     /**
      * Read a file from the filesystem.
      */
